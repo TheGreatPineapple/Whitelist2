@@ -1,39 +1,71 @@
-# Maintenance
-[![Version](https://img.shields.io/github/release/kennytv/Maintenance.svg)](https://github.com/kennytv/Maintenance/releases)
-![Build Status](https://github.com/kennytv/Maintenance/workflows/Build/badge.svg)
-[![Crowdin](https://badges.crowdin.net/maintenance/localized.svg)](https://crowdin.com/project/maintenance)
-[![Discord](https://img.shields.io/discord/489135856284729384.svg?label=Discord&logo=discord&logoColor=fff)](https://discord.gg/vGCUzHq)
+# ProxyWhitelist
 
-Maintenance is the most customizable free maintenance plugin for your Minecraft server you can find. It runs on Paper (also Spigot, but with limited functionality), BungeeCord, Sponge, as well as Velocity.
+ProxyWhitelist is a network-wide whitelist plugin for **BungeeCord** and **Velocity** proxies. When the
+whitelist is enabled, only whitelisted players may join the network (or specific backend servers), everyone
+else is shown a configurable kick message / MOTD.
 
-Its features include:
-* A custom motd as well as server icon, that will be shown during maintenance
-* Start- and endtimers, which will enable/disable maintenance mode after the time is up
-* A '%TIMER%' variable usable in the pingmessage, to show the time until a running endtimer finishes (other variables and tricks are explained in the configuration file's comments)
-* A maintenance whitelist, to grant specific players the ability to join while you're working on your server
-* Nearly all messages are editable via the language file, given in a multitude of different languages
-* Features specifically for Bungee/Velocity
-  * Only want to enable maintenance on a single server? You can also do so by using the `/maintenance <on/off> <servername>` command
-  * Link multiple proxy instances through a Redis connection, so you don't have to change maintenance status or whitelisted players on each proxy by hand
-  * Use PlaceholderAPI placeholders with the [**MaintenanceAddon**](https://hangar.papermc.io/kennytv/MaintenanceAddon) (for Velocity and Bungee)
+It is a proxy-only fork of [kennytv's Maintenance plugin](https://github.com/kennytv/Maintenance), refocused
+around whitelisting and extended with first-class Bedrock support and a built-in Discord bot.
 
-A full list of commands, permissions and configuration options can be found in the wiki listed below.
-* [Hangar Downloads](https://hangar.papermc.io/kennytv/Maintenance)
-* [Wiki](https://github.com/kennytv/Maintenance/wiki) (configuration, permissions, API usage)
-* [Changelogs](https://github.com/kennytv/Maintenance/blob/master/.github/CHANGELOG.md)
-* [Issue tracker/bug reports](https://github.com/kennytv/Maintenance/issues)
-* [Discord](https://discord.gg/vGCUzHq)
-* [PlaceholderAPI addon](https://hangar.papermc.io/kennytv/MaintenanceAddon)
+## Features
+* Toggle the whitelist globally or per backend server (`/whitelist <on/off> [server]`)
+* Manage whitelisted players with `/whitelist <add/remove/list>`
+* Custom MOTD, server icon, and player-count message shown while the whitelist is active
+* Start-/end-/schedule-timers to automatically enable/disable the whitelist
+* Link multiple proxy instances through Redis, so the whitelist status and whitelisted players stay in sync
+* **Bedrock / Geyser support** – add Bedrock players by their gamertag (resolved via the Geyser global API
+  into the Floodgate UUID). Just prefix the gamertag with the configured Bedrock prefix, e.g. `/whitelist add .Notch`.
+* **Built-in Discord bot** – run a Discord bot straight from the plugin (just provide a bot token) so staff can
+  run `/whitelist add|remove|list` from Discord and have it applied to the server whitelist instantly
+  (and synced across proxies if Redis is enabled).
 
+## Commands & permissions
+The main command is `/whitelist` (aliases: `/pwhitelist`, `/pwl`, and the legacy `/maintenance`, `/mt`).
+Permission nodes are unchanged from the original plugin (`maintenance.admin`, `maintenance.bypass`, ...),
+so existing permission setups keep working. Run `/whitelist help` in-game for the full list.
 
-## Localization
-The English base language file is localized using Crodwin. You can see and update translations here: https://crowdin.com/project/maintenance
+## Bedrock / Geyser
+Set `bedrock.enabled: true` in `config.yml`. Bedrock players are recognised by their Floodgate UUID
+(`mostSignificantBits == 0`), so no Floodgate dependency is required at build time. To whitelist an offline
+Bedrock player, add them with their gamertag prefixed by `bedrock.prefix` (default `.`):
+```
+/whitelist add .SomeGamertag
+```
 
-Join [our Discord](https://discord.gg/vGCUzHq) if you want to get the proofreader or translator role on the project.
-Adding translations for languages not yet listed is always appreciated as well!
+## Discord bot
+Configure the `discord-bot` section in `config.yml`:
+```yaml
+discord-bot:
+  enabled: true
+  token: "YOUR_BOT_TOKEN"
+  # Optional: restrict slash commands to a single guild (registers instantly instead of up to 1h globally).
+  guild-id: ""
+  # Optional: role id required to use the whitelist slash commands. Empty = require the Administrator permission.
+  whitelist-role-id: ""
+```
+The bot registers slash commands:
+* `/whitelist add|remove|list` – staff management (gated by `whitelist-role-id`, or the Administrator permission if empty).
+* `/link <player>` – a member links their own Discord account to a Minecraft account (one Minecraft account per Discord user).
+* `/unlink` – removes the link (and the whitelist entry gained through it).
+
+Bedrock gamertags work in all of these too (prefix them with the configured Bedrock prefix).
+
+### Role-based auto-whitelisting
+Set `auto-whitelist-role-id` to a Discord role id to enable role syncing. Once a member has linked their account,
+gaining that role automatically adds them to the whitelist; losing it removes them (`remove-on-role-loss`). Role
+holders are also reconciled on startup. Receiving role changes requires the **Server Members Intent** to be enabled
+for the bot in the Discord developer portal.
+
+### Pairing with a chat bridge
+This bot is intentionally scoped to whitelisting/linking. If you also want a Minecraft⇄Discord chat bridge, run a
+dedicated bridge plugin such as [VelocityDiscord](https://modrinth.com/plugin/velocitydiscord) alongside it — they
+complement each other. Use a **separate Discord bot application/token** for each, since a single token cannot run two
+gateway sessions at once.
 
 ## Compiling
-To create a working jar yourself, simply clone the project and compile it with Gradle (`gradlew build`). To compile, you need a JDK 21+ (although it targets 17).
+Clone the project and build with Gradle (`./gradlew build`). You need a JDK 21+ (the project targets 17).
+The proxy jars are written to `build/libs/ProxyWhitelist-Bungee-<version>.jar` and
+`build/libs/ProxyWhitelist-Velocity-<version>.jar`.
 
 ## License
-This project is licensed under the [GNU General Public License v3](LICENSE.txt).
+This project is licensed under the [GNU General Public License v3](LICENSE.txt), like the upstream project.

@@ -6,7 +6,7 @@ plugins {
 
 tasks {
     shadowJar {
-        archiveFileName.set("Maintenance-${project.name.substringAfter("maintenance-").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}-${project.version}.jar")
+        archiveFileName.set("ProxyWhitelist-${project.name.substringAfter("maintenance-").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}-${project.version}.jar")
         destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
     }
 }

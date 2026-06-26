@@ -10,13 +10,11 @@ plugins {
 allprojects {
     group = "eu.kennytv.maintenance"
     version = property("projectVersion") as String // from gradle.properties
-    description = "Enable maintenance mode with a custom maintenance motd and icon."
+    description = "Proxy whitelist plugin with Bedrock/Geyser support and a built-in Discord bot."
 }
 
 val platforms = setOf(
-    projects.maintenancePaper,
     projects.maintenanceBungee,
-    projects.maintenanceSponge,
     projects.maintenanceVelocity
 ).map { it.path }
 

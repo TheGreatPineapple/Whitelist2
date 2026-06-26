@@ -84,6 +84,8 @@ public final class MaintenanceBungeePlugin extends MaintenanceProxyPlugin {
         continueLastEndtimer();
         new Metrics(plugin, 742);
 
+        startDiscordBot();
+
         final Plugin serverListPlus = pm.getPlugin("ServerListPlus");
         if (serverListPlus != null) {
             serverListPlusHook = new ServerListPlusHook(serverListPlus);

@@ -85,7 +85,7 @@ public abstract class MaintenancePlugin implements Maintenance {
         this.serverType = serverType;
         this.prefix = Component.text()
                 .append(Component.text().content("[").color(NamedTextColor.DARK_GRAY))
-                .append(Component.text().content("Maintenance").color(NamedTextColor.YELLOW))
+                .append(Component.text().content("Whitelist").color(NamedTextColor.YELLOW))
                 .append(Component.text().content("]").color(NamedTextColor.DARK_GRAY))
                 .append(Component.text(" "))
                 .build();

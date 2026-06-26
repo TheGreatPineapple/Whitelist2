@@ -24,8 +24,10 @@ import eu.kennytv.maintenance.api.proxy.MaintenanceProxy;
 import eu.kennytv.maintenance.api.proxy.Server;
 import eu.kennytv.maintenance.core.MaintenancePlugin;
 import eu.kennytv.maintenance.core.proxy.command.MaintenanceProxyCommand;
+import eu.kennytv.maintenance.core.proxy.discord.DiscordBot;
 import eu.kennytv.maintenance.core.proxy.runnable.SingleMaintenanceRunnable;
 import eu.kennytv.maintenance.core.proxy.runnable.SingleMaintenanceScheduleRunnable;
+import eu.kennytv.maintenance.core.proxy.util.GeyserApiUtil;
 import eu.kennytv.maintenance.core.proxy.util.ProfileLookup;
 import eu.kennytv.maintenance.core.runnable.MaintenanceRunnableBase;
 import eu.kennytv.maintenance.core.util.DiscordWebhook;
@@ -60,6 +62,7 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.]{1,16}$");
     private final Map<String, MaintenanceRunnableBase> serverTasks = new HashMap<>();
     protected SettingsProxy settingsProxy;
+    protected DiscordBot discordBot;
 
     protected MaintenanceProxyPlugin(final String version, final ServerType serverType) {
         super(version, serverType);
@@ -68,9 +71,30 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     @Override
     public void disable() {
         super.disable();
+        if (discordBot != null) {
+            discordBot.shutdown();
+        }
         if (settingsProxy.redisHandler() != null) {
             settingsProxy.redisHandler().close();
         }
+    }
+
+    /**
+     * Starts the built-in Discord bot if it is enabled and a token is configured.
+     * The login happens off the main thread.
+     */
+    public void startDiscordBot() {
+        if (!settingsProxy.isDiscordBotEnabled()) {
+            return;
+        }
+        final String token = settingsProxy.getDiscordBotToken();
+        if (token == null || token.isBlank()) {
+            getLogger().warning("The Discord bot is enabled, but no token is set in the config!");
+            return;
+        }
+
+        discordBot = new DiscordBot(this, settingsProxy);
+        async(() -> discordBot.start(token));
     }
 
     @Override
@@ -231,6 +255,17 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     @Blocking
     @Nullable
     protected ProfileLookup doUUIDLookup(final String name) throws IOException {
+        // Bedrock (Geyser/Floodgate) lookup: gamertags prefixed with the configured Bedrock prefix
+        // are resolved against the Geyser global API instead of the Mojang API.
+        final String bedrockPrefix = settingsProxy.getBedrockPrefix();
+        if (settingsProxy.isBedrockSupport() && !bedrockPrefix.isEmpty() && name.startsWith(bedrockPrefix)) {
+            final String gamertag = name.substring(bedrockPrefix.length());
+            if (gamertag.isEmpty()) {
+                return null;
+            }
+            return GeyserApiUtil.lookupBedrockProfile(gamertag, name);
+        }
+
         ProfileLookup profileLookup = null;
         if (USERNAME_PATTERN.matcher(name).matches()) {
             try {

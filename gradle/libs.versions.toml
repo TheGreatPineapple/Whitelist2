@@ -4,6 +4,8 @@ metadata.format.version = "1.1"
 
 jedis = "7.5.0"
 bstats = "3.2.1"
+jda = "5.6.1"
+slf4j = "2.0.16"
 
 # Provided on good platforms, shaded in Bungee
 adventure = "4.26.1"
@@ -39,6 +41,8 @@ adventurePlatformBungee = { group = "net.kyori", name = "adventure-platform-bung
 jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
 
 jedis = {group = "redis.clients", name = "jedis", version.ref = "jedis"}
+jda = { group = "net.dv8tion", name = "JDA", version.ref = "jda" }
+slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 bstatsBukkit = { group = "org.bstats", name = "bstats-bukkit", version.ref = "bstats" }

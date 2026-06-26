@@ -41,6 +41,15 @@ public final class SettingsProxy extends Settings {
     private List<String> fallbackServers;
     private String waitingServer;
     private boolean fallbackToOfflineUUID;
+    private boolean bedrockSupport;
+    private String bedrockPrefix;
+    private boolean discordBotEnabled;
+    private String discordBotToken;
+    private String discordGuildId;
+    private String discordWhitelistRoleId;
+    private String discordAutoWhitelistRoleId;
+    private boolean discordRemoveOnRoleLoss;
+    private boolean discordAllowLinking;
 
     private Map<String, List<String>> commandsOnMaintenanceEnable;
     private Map<String, List<String>> commandsOnMaintenanceDisable;
@@ -67,6 +76,19 @@ public final class SettingsProxy extends Settings {
             waitingServer = null;
         }
         fallbackToOfflineUUID = config.getBoolean("fallback-to-offline-uuid", false);
+
+        final ConfigSection bedrockSection = config.getSection("bedrock");
+        bedrockSupport = bedrockSection.getBoolean("enabled", false);
+        bedrockPrefix = bedrockSection.getString("prefix", ".");
+
+        final ConfigSection discordSection = config.getSection("discord-bot");
+        discordBotEnabled = discordSection.getBoolean("enabled", false);
+        discordBotToken = discordSection.getString("token", "");
+        discordGuildId = discordSection.getString("guild-id", "");
+        discordWhitelistRoleId = discordSection.getString("whitelist-role-id", "");
+        discordAutoWhitelistRoleId = discordSection.getString("auto-whitelist-role-id", "");
+        discordRemoveOnRoleLoss = discordSection.getBoolean("remove-on-role-loss", true);
+        discordAllowLinking = discordSection.getBoolean("allow-linking", true);
 
         commandsOnMaintenanceEnable = new HashMap<>();
         final ConfigSection enableCommandsSection = config.getSection("commands-on-single-maintenance-enable");
@@ -284,6 +306,42 @@ public final class SettingsProxy extends Settings {
 
     public boolean isFallbackToOfflineUUID() {
         return fallbackToOfflineUUID;
+    }
+
+    public boolean isBedrockSupport() {
+        return bedrockSupport;
+    }
+
+    public String getBedrockPrefix() {
+        return bedrockPrefix;
+    }
+
+    public boolean isDiscordBotEnabled() {
+        return discordBotEnabled;
+    }
+
+    public String getDiscordBotToken() {
+        return discordBotToken;
+    }
+
+    public String getDiscordGuildId() {
+        return discordGuildId;
+    }
+
+    public String getDiscordWhitelistRoleId() {
+        return discordWhitelistRoleId;
+    }
+
+    public String getDiscordAutoWhitelistRoleId() {
+        return discordAutoWhitelistRoleId;
+    }
+
+    public boolean isDiscordRemoveOnRoleLoss() {
+        return discordRemoveOnRoleLoss;
+    }
+
+    public boolean isDiscordAllowLinking() {
+        return discordAllowLinking;
     }
 
     public List<String> getCommandsOnMaintenanceEnable(final Server server) {

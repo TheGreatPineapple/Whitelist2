@@ -27,7 +27,7 @@ public final class MaintenanceBungeeCommandBase extends Command implements TabEx
     private final MaintenanceCommand command;
 
     public MaintenanceBungeeCommandBase(final MaintenanceCommand command) {
-        super("maintenance", "maintenance.command", "mt");
+        super("whitelist", "maintenance.command", "pwhitelist", "pwl", "maintenance", "mt");
         this.command = command;
     }
 
