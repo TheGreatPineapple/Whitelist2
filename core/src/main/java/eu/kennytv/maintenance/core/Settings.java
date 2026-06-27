@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class Settings implements eu.kennytv.maintenance.api.Settings {
     public static final String NEW_LINE_REPLACEMENT = "<br>";
-    private static final int CONFIG_VERSION = 14;
+    private static final int CONFIG_VERSION = 16;
     private static final int LANGUAGE_VERSION = 7;
     protected final MaintenancePlugin plugin;
     private final Map<UUID, String> whitelistedPlayers = new HashMap<>();
@@ -200,7 +200,7 @@ public class Settings implements eu.kennytv.maintenance.api.Settings {
             timerSpecificPingMessages = null;
         }
 
-        maintenance = config.getBoolean("maintenance-enabled");
+        maintenance = config.getBoolean("whitelist-enabled");
         activeMode = normalizeMode(config.getString("active-mode"));
         activeReason = normalizeReason(config.getString("active-reason"));
         commandsOnMaintenanceEnable = config.getStringList("commands-on-maintenance-enable");
@@ -335,6 +335,10 @@ public class Settings implements eu.kennytv.maintenance.api.Settings {
                     }
                     config.set("proxied-maintenance-servers", migratedServers);
                 }
+            }
+            if (version < 15) {
+                // Renamed the master switch to make the config self-explanatory.
+                config.move("maintenance-enabled", "whitelist-enabled");
             }
 
             createFile("config-new.yml", "config.yml");
@@ -618,7 +622,7 @@ public class Settings implements eu.kennytv.maintenance.api.Settings {
     public void setMaintenance(final boolean maintenance, @Nullable final String mode) {
         if (this.maintenance != maintenance) {
             this.maintenance = maintenance;
-            config.set("maintenance-enabled", maintenance);
+            config.set("whitelist-enabled", maintenance);
             this.activeMode = normalizeMode(mode);
             config.set("active-mode", this.activeMode != null ? this.activeMode : "default");
             saveConfig();

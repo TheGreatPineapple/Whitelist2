@@ -39,18 +39,12 @@ public final class Config extends ConfigSection {
 
     private static final String AWESOME_HEADER =
             """
-                    ###################################################################################################################
-                    #   __  __       _       _                                    _             _                          _          #
-                    #  |  \\/  | __ _(_)_ __ | |_ ___ _ __   __ _ _ __   ___ ___  | |__  _   _  | | _____ _ __  _ __  _   _| |___   __ #
-                    #  | |\\/| |/ _` | | '_ \\| __/ _ \\ '_ \\ / _` | '_ \\ / __/ _ \\ | '_ \\| | | | | |/ / _ \\ '_ \\| '_ \\| | | | __\\ \\ / / #
-                    #  | |  | | (_| | | | | | ||  __/ | | | (_| | | | | (_|  __/ | |_) | |_| | |   <  __/ | | | | | | |_| | |_ \\ V /  #
-                    #  |_|  |_|\\__,_|_|_| |_|\\__\\___|_| |_|\\__,_|_| |_|\\___\\___| |_.__/ \\__, | |_|\\_\\___|_| |_|_| |_|\\__, |\\__| \\_/   #
-                    #                                                                  |___/                        |___/             #
-                    ###################################################################################################################
-                    # You can report bugs here: https://github.com/kennytv/Maintenance/issues
-                    # If you need any other help/support, you can also join my Discord server: https://discord.gg/vGCUzHq
-                    # The config and language files use MiniMessage, NOT legacy text for input. Use https://webui.advntr.dev/ to edit and preview the formatted text.
-                    # For a full list of formats and fancy examples of MiniMessage, see https://docs.papermc.io/adventure/minimessage/format/
+                    ###############################################################################
+                    # ProxyWhitelist - a proxy whitelist plugin (fork of kennytv's Maintenance).
+                    # Bedrock support + a built-in Discord bot. Report bugs: https://github.com/kennytv/Maintenance/issues
+                    # Config/language files use MiniMessage (not legacy). Edit/preview: https://webui.advntr.dev/
+                    # MiniMessage format reference: https://docs.papermc.io/adventure/minimessage/format/
+                    ###############################################################################
                     """;
     private final Yaml yaml = createYaml();
     private final File file;

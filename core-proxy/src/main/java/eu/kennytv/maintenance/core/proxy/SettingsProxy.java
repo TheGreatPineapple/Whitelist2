@@ -44,6 +44,8 @@ public final class SettingsProxy extends Settings {
     private boolean bedrockSupport;
     private String bedrockPrefix;
     private String discordInvite;
+    private boolean usernameCacheEnabled;
+    private int usernameCacheMaxEntries;
     private boolean discordBotEnabled;
     private String discordBotToken;
     private String discordGuildId;
@@ -88,6 +90,15 @@ public final class SettingsProxy extends Settings {
         bedrockPrefix = bedrockSection.getString("prefix", ".");
 
         discordInvite = config.getString("discord-invite", "");
+
+        final ConfigSection usernameCacheSection = config.getSection("username-cache");
+        if (usernameCacheSection != null) {
+            usernameCacheEnabled = usernameCacheSection.getBoolean("enabled", true);
+            usernameCacheMaxEntries = usernameCacheSection.getInt("max-entries", 10000);
+        } else {
+            usernameCacheEnabled = true;
+            usernameCacheMaxEntries = 10000;
+        }
 
         final ConfigSection discordSection = config.getSection("discord-bot");
         discordBotEnabled = discordSection.getBoolean("enabled", false);
@@ -338,6 +349,14 @@ public final class SettingsProxy extends Settings {
     @Override
     public String getDiscordInvite() {
         return discordInvite;
+    }
+
+    public boolean isUsernameCacheEnabled() {
+        return usernameCacheEnabled;
+    }
+
+    public int getUsernameCacheMaxEntries() {
+        return usernameCacheMaxEntries;
     }
 
     public String getBedrockPrefix() {

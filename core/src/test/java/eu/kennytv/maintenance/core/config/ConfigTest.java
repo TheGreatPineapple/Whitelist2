@@ -100,7 +100,7 @@ class ConfigTest {
         newlyLoaded.load();
 
         assertTrue(newestConfig.contains("waiting-server"));
-        assertNotNull(newestConfig.getComments().get("maintenance-enabled"));
+        assertNotNull(newestConfig.getComments().get("whitelist-enabled"));
         //assertNotNull(newestConfig.getComments().get("mysql.use-ssl"));
         assertNotNull(newestConfig.getComments().get("update-checks"));
         assertEquals(newlyLoaded.getHeader(), newestConfig.getHeader());
