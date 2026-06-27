@@ -71,9 +71,10 @@ import net.kyori.adventure.text.Component;
 import org.bstats.velocity.Metrics;
 import org.jetbrains.annotations.Nullable;
 
-@Plugin(id = "maintenance", name = "Maintenance", version = MaintenanceVersion.VERSION, authors = "kennytv",
-        description = "Enable maintenance mode with a custom maintenance motd and icon.", url = MaintenancePlugin.HANGAR_URL,
-        dependencies = {@Dependency(id = "serverlistplus", optional = true), @Dependency(id = "luckperms", optional = true)})
+@Plugin(id = "proxywhitelist", name = "ProxyWhitelist", version = MaintenanceVersion.VERSION, authors = "kennytv",
+        description = "Proxy whitelist plugin with Bedrock/Geyser support and a built-in Discord bot.", url = MaintenancePlugin.HANGAR_URL,
+        dependencies = {@Dependency(id = "serverlistplus", optional = true), @Dependency(id = "luckperms", optional = true),
+                @Dependency(id = "floodgate", optional = true), @Dependency(id = "geyser", optional = true)})
 public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
     private final ProxyServer server;
     private final Logger logger;
@@ -101,7 +102,7 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
 
         final MaintenanceVelocityCommand command = new MaintenanceVelocityCommand(this, settingsProxy);
         commandManager = command;
-        server.getCommandManager().register(server.getCommandManager().metaBuilder("maintenance").aliases("mt").build(), command);
+        server.getCommandManager().register(server.getCommandManager().metaBuilder("whitelist").aliases("pwhitelist", "pwl", "maintenance", "mt").build(), command);
 
         final EventManager em = server.getEventManager();
         //noinspection deprecation
@@ -109,6 +110,8 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
         em.register(this, new ServerConnectListener(this, settingsProxy));
 
         continueLastEndtimer();
+
+        startDiscordBot();
 
         final PluginManager pluginManager = server.getPluginManager();
         pluginManager.getPlugin("serverlistplus").flatMap(PluginContainer::getInstance).ifPresent(serverListPlus -> {
@@ -143,7 +146,7 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
     @Override
     protected void kickPlayersFromProxy() {
         for (final Player p : server.getAllPlayers()) {
-            if (!hasPermission(p, "bypass") && !settingsProxy.isWhitelisted(p.getUniqueId())) {
+            if (!hasPermission(p, "bypass") && !hasPermission(p, "whitelisted") && !settingsProxy.isWhitelisted(p.getUniqueId())) {
                 p.disconnect(settingsProxy.getKickMessage());
             }
         }
@@ -154,7 +157,7 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
         final RegisteredServer fallbackServer = fallback != null ? ((VelocityServer) fallback).server() : null;
         final boolean checkForFallback = fallbackServer != null && !isMaintenance(fallback);
         for (final Player player : ((VelocityServer) server).server().getPlayersConnected()) {
-            if (hasPermission(player, "bypass") || settingsProxy.isWhitelisted(player.getUniqueId())) {
+            if (hasPermission(player, "bypass") || hasPermission(player, "whitelisted") || settingsProxy.isWhitelisted(player.getUniqueId())) {
                 player.sendMessage(settingsProxy.getMessage("singleMaintenanceActivated", "%SERVER%", server.getName()));
                 continue;
             }
@@ -179,7 +182,7 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
         final RegisteredServer waitingServer = ((VelocityServer) server).server();
         // Notifications done in global method
         for (final Player player : this.server.getAllPlayers()) {
-            if (hasPermission(player, "bypass") || settingsProxy.isWhitelisted(player.getUniqueId())) continue;
+            if (hasPermission(player, "bypass") || hasPermission(player, "whitelisted") || settingsProxy.isWhitelisted(player.getUniqueId())) continue;
             if (player.getCurrentServer().isPresent() && player.getCurrentServer().get().getServerInfo().getName().equals(waitingServer.getServerInfo().getName()))
                 continue;
             if (!isMaintenance(waitingServer)) {
@@ -266,8 +269,8 @@ public final class MaintenanceVelocityPlugin extends MaintenanceProxyPlugin {
 
     @Override
     public File getPluginFile() {
-        return server.getPluginManager().getPlugin("maintenance")
-                .orElseThrow(() -> new IllegalArgumentException("Couldn't get Maintenance instance. Custom/broken build?")).getDescription().getSource()
+        return server.getPluginManager().getPlugin("proxywhitelist")
+                .orElseThrow(() -> new IllegalArgumentException("Couldn't get ProxyWhitelist instance. Custom/broken build?")).getDescription().getSource()
                 .orElseThrow(IllegalArgumentException::new).toFile();
     }
 

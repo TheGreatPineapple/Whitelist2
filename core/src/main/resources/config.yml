@@ -120,6 +120,10 @@ kick-online-players: true
 # When fetched player does not exist then fallback to offline uuid. Only works on proxies like Velocity or BungeeCord
 fallback-to-offline-uuid: false
 
+# A Discord invite link for your server. Usable as the %DISCORD% placeholder in any message - most usefully in
+# the 'kickmessage' so non-whitelisted players know where to apply. Example: "discord.gg/yourserver"
+discord-invite: ""
+
 # If enabled and the server is restarted while running an endtimer, the timer will be continued after the restart.
 # If the timer ends while the server is offline, maintenance will be disabled as soon as the server starts again.
 continue-endtimer-after-restart:
@@ -153,10 +157,60 @@ redis:
   # E.g. an SSL connection to a password protected redis could look like this: "rediss://user:password@127.0.0.1:6379"
   uri: "redis://localhost:6379"
 
+# Bedrock (Geyser/Floodgate) support.
+# When enabled, Bedrock players can be whitelisted by their gamertag, prefixed with the 'prefix' below.
+# Example: '/whitelist add .Notch' resolves the gamertag 'Notch' via the Geyser global API into the
+# Floodgate UUID and stores it on the whitelist. Bedrock players are recognized on join by their
+# Floodgate UUID, so no extra dependency is required.
+bedrock:
+  enabled: false
+  # The Floodgate username prefix. Must match the prefix configured in your Floodgate config.
+  prefix: "."
+
+# Built-in Discord bot. Lets staff manage the whitelist from Discord and (optionally) auto-whitelist
+# players based on a Discord role once they have linked their Minecraft account.
+discord-bot:
+  enabled: false
+  # The Discord bot token (from https://discord.com/developers/applications -> your app -> Bot).
+  token: ""
+  # Optional: limit slash commands to a single guild (they appear instantly instead of up to 1h globally).
+  guild-id: ""
+  # Optional: role id allowed to use the '/whitelist add|remove|list' commands.
+  # Leave empty to require the Discord 'Administrator' permission instead.
+  whitelist-role-id: ""
+  # Optional: members who linked their Minecraft account (via '/link') and have this role are
+  # automatically added to the whitelist. Leave empty to disable role syncing.
+  # NOTE: role syncing requires the 'Server Members Intent' to be enabled for your bot in the
+  # Discord developer portal.
+  auto-whitelist-role-id: ""
+  # If true, players are removed from the whitelist again when they lose the auto-whitelist role.
+  remove-on-role-loss: true
+  # If true, members can link their own account with '/link <name>'. If false, only staff can add
+  # players through '/whitelist add'.
+  allow-linking: true
+  # Code-based linking: players prove they own a Minecraft account by linking it in-game.
+  # The whitelist must be enabled (/whitelist on) for this to take effect. Non-whitelisted players are
+  # given a one-time code and told to DM it to the bot; once they DM it (and have the role if required),
+  # they are added to the whitelist.
+  linking:
+    # off   = no code requirement (manual whitelist / role sync only).
+    # kick  = unlinked players are kicked at join with their code (like DiscordSRV's "require linking to play").
+    # limbo = unlinked players are sent to the 'waiting-server' (use a Limbo server) and shown their code there.
+    mode: "off"
+    # If true, a linked player must also have the auto-whitelist-role to actually be whitelisted.
+    require-role: true
+    # Number of digits in the linking code. 6+ is strongly recommended for security.
+    code-length: 6
+    # How long a code stays valid, in seconds.
+    code-expiry-seconds: 600
+    # Max wrong code guesses a single Discord user may make per minute before being temporarily blocked
+    # (anti-brute-force).
+    max-attempts-per-minute: 5
+
 # If disabled, you will no longer receive any messages if there is an update.
 # Not recommended to disable, as new versions generally tend to run better and with fewer bugs.
-# However, you can always check for updates manually using the '/maintenance update' command.
+# However, you can always check for updates manually using the '/whitelist update' command.
 update-checks: true
 
 # Used for autoupdating the config, do not change this value.
-config-version: 11
+config-version: 14

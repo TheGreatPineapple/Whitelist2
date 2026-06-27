@@ -47,8 +47,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class Settings implements eu.kennytv.maintenance.api.Settings {
     public static final String NEW_LINE_REPLACEMENT = "<br>";
-    private static final int CONFIG_VERSION = 11;
-    private static final int LANGUAGE_VERSION = 5;
+    private static final int CONFIG_VERSION = 14;
+    private static final int LANGUAGE_VERSION = 7;
     protected final MaintenancePlugin plugin;
     private final Map<UUID, String> whitelistedPlayers = new HashMap<>();
     private final String[] unsupportedFields;
@@ -757,6 +757,14 @@ public class Settings implements eu.kennytv.maintenance.api.Settings {
 
     public String getLanguage() {
         return languageName;
+    }
+
+    /**
+     * A Discord invite link usable as the {@code %DISCORD%} placeholder in messages. Empty by default;
+     * overridden on proxies where it can be configured.
+     */
+    public String getDiscordInvite() {
+        return "";
     }
 
     public boolean hasCustomPlayerCountMessage() {

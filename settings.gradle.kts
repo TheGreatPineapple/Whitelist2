@@ -28,8 +28,6 @@ subproject("api")
 subproject("api-proxy")
 subproject("core")
 subproject("core-proxy")
-subproject("paper")
-subproject("sponge")
 subproject("bungee")
 subproject("velocity")
 

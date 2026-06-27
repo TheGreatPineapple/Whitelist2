@@ -1,7 +1,7 @@
-name: Maintenance
+name: ProxyWhitelist
 version: ${version}
 main: eu.kennytv.maintenance.bungee.MaintenanceBungeeBase
 author: kennytv
 description: ${description}
-softDepends: [ServerListPlus, LuckPerms]
+softDepends: [ServerListPlus, LuckPerms, floodgate, Geyser-BungeeCord]
 website: https://hangar.papermc.io/kennytv/Maintenance

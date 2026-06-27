@@ -24,8 +24,10 @@ import eu.kennytv.maintenance.api.proxy.MaintenanceProxy;
 import eu.kennytv.maintenance.api.proxy.Server;
 import eu.kennytv.maintenance.core.MaintenancePlugin;
 import eu.kennytv.maintenance.core.proxy.command.MaintenanceProxyCommand;
+import eu.kennytv.maintenance.core.proxy.discord.DiscordBot;
 import eu.kennytv.maintenance.core.proxy.runnable.SingleMaintenanceRunnable;
 import eu.kennytv.maintenance.core.proxy.runnable.SingleMaintenanceScheduleRunnable;
+import eu.kennytv.maintenance.core.proxy.util.GeyserApiUtil;
 import eu.kennytv.maintenance.core.proxy.util.ProfileLookup;
 import eu.kennytv.maintenance.core.runnable.MaintenanceRunnableBase;
 import eu.kennytv.maintenance.core.util.DiscordWebhook;
@@ -49,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +63,7 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.]{1,16}$");
     private final Map<String, MaintenanceRunnableBase> serverTasks = new HashMap<>();
     protected SettingsProxy settingsProxy;
+    protected DiscordBot discordBot;
 
     protected MaintenanceProxyPlugin(final String version, final ServerType serverType) {
         super(version, serverType);
@@ -68,9 +72,33 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     @Override
     public void disable() {
         super.disable();
+        if (discordBot != null) {
+            discordBot.shutdown();
+        }
         if (settingsProxy.redisHandler() != null) {
             settingsProxy.redisHandler().close();
         }
+    }
+
+    /**
+     * Starts the built-in Discord bot if it is enabled and a token is configured.
+     * The login happens off the main thread.
+     */
+    public void startDiscordBot() {
+        if (!settingsProxy.isDiscordBotEnabled()) {
+            if (settingsProxy.isLinkingEnforced()) {
+                getLogger().warning("Code-based linking is enabled, but the Discord bot is disabled - players will not be able to get a code! Enable the bot in the config.");
+            }
+            return;
+        }
+        final String token = settingsProxy.getDiscordBotToken();
+        if (token == null || token.isBlank()) {
+            getLogger().warning("The Discord bot is enabled, but no token is set in the config!");
+            return;
+        }
+
+        discordBot = new DiscordBot(this, settingsProxy);
+        async(() -> discordBot.start(token));
     }
 
     @Override
@@ -231,6 +259,17 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     @Blocking
     @Nullable
     protected ProfileLookup doUUIDLookup(final String name) throws IOException {
+        // Bedrock (Geyser/Floodgate) lookup: gamertags prefixed with the configured Bedrock prefix
+        // are resolved against the Geyser global API instead of the Mojang API.
+        final String bedrockPrefix = settingsProxy.getBedrockPrefix();
+        if (settingsProxy.isBedrockSupport() && !bedrockPrefix.isEmpty() && name.startsWith(bedrockPrefix)) {
+            final String gamertag = name.substring(bedrockPrefix.length());
+            if (gamertag.isEmpty()) {
+                return null;
+            }
+            return GeyserApiUtil.lookupBedrockProfile(gamertag, name);
+        }
+
         ProfileLookup profileLookup = null;
         if (USERNAME_PATTERN.matcher(name).matches()) {
             try {
@@ -310,6 +349,31 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
 
     public SettingsProxy getSettingsProxy() {
         return settingsProxy;
+    }
+
+    /**
+     * Message shown when a non-whitelisted player is denied at join. If code-based linking is enabled, this
+     * generates the player's one-time code and tells them to DM it to the bot (DiscordSRV-style); otherwise
+     * the normal kick message is used.
+     */
+    public Component getJoinDenyMessage(final SenderInfo sender) {
+        if (settingsProxy.isLinkingEnforced() && discordBot != null) {
+            final String code = discordBot.generateLinkCode(sender.uuid(), sender.name());
+            return settingsProxy.getMessage("linkingKickMessage", "%CODE%", code, "%BOT%", discordBot.getBotName());
+        }
+        return settingsProxy.getKickMessage();
+    }
+
+    /**
+     * Message shown when a non-whitelisted player is sent to the waiting/limbo server. In 'limbo' linking mode
+     * this contains their one-time code so they can link from there.
+     */
+    public Component getWaitingJoinMessage(final SenderInfo sender) {
+        if (settingsProxy.isLinkingLimboMode() && discordBot != null) {
+            final String code = discordBot.generateLinkCode(sender.uuid(), sender.name());
+            return settingsProxy.getMessage("linkingLimboMessage", "%CODE%", code, "%BOT%", discordBot.getBotName());
+        }
+        return settingsProxy.getMessage("sentToWaitingServer");
     }
 
     @Nullable

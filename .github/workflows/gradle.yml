@@ -24,5 +24,5 @@ jobs:
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Maintenance Files
+          name: ProxyWhitelist Files
           path: build/libs
