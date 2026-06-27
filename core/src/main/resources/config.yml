@@ -119,6 +119,14 @@ fallback-to-offline-uuid: false
 # the 'kickmessage' so non-whitelisted players know where to apply. Example: "discord.gg/yourserver"
 discord-invite: ""
 
+# Remembers the name <-> uuid of players that join, so cracked/offline players (e.g. LimboAuth names with a
+# '.' prefix) and Bedrock players can be whitelisted by name. It is bounded and throttled, so a join flood /
+# bot attack with random names cannot bloat it or hammer the disk - the oldest entries are dropped past the limit.
+username-cache:
+  enabled: true
+  # Maximum number of cached players. Older entries are evicted once this is exceeded.
+  max-entries: 10000
+
 # If enabled and the server is restarted while running an endtimer, the timer will be continued after the restart.
 # If the timer ends while the server is offline, the whitelist will be disabled as soon as the server starts again.
 continue-endtimer-after-restart:
@@ -208,4 +216,4 @@ discord-bot:
 update-checks: true
 
 # Used for autoupdating the config, do not change this value.
-config-version: 15
+config-version: 16

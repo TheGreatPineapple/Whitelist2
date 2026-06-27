@@ -65,6 +65,11 @@ cached even though they're kicked), then staff can add them by the exact name sh
 `/whitelist add .ibuyKhushi340`. This also covers Bedrock/Floodgate players. (Note: if your Bedrock `prefix`
 and your auth plugin's cracked prefix are both `.`, the cache is what disambiguates them.)
 
+The cache is hardened against join floods / bot attacks: it's **bounded** (`username-cache.max-entries`, default
+10000 — oldest entries evicted past the limit) and **throttled** (saved at most once every 30s, plus on shutdown),
+so a burst of random names can't bloat the file or hammer the disk. Set `username-cache.enabled: false` to turn it
+off entirely.
+
 ### Manual whitelist (no linking)
 With `linking.mode: off`, it's a plain whitelist: non-whitelisted players are kicked with the `kickmessage`,
 which by default points them at your Discord to apply. Set `discord-invite: "discord.gg/yourserver"` in the

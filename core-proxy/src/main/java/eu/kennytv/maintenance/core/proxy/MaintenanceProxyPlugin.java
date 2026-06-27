@@ -74,6 +74,9 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
     @Override
     public void disable() {
         super.disable();
+        if (playerNameCache != null) {
+            playerNameCache.flush();
+        }
         if (discordBot != null) {
             discordBot.shutdown();
         }
@@ -366,7 +369,9 @@ public abstract class MaintenanceProxyPlugin extends MaintenancePlugin implement
      * Initializes the username cache. Call this once on enable (the data folder must exist).
      */
     public void initPlayerCache() {
-        playerNameCache = new PlayerNameCache(this);
+        if (settingsProxy.isUsernameCacheEnabled()) {
+            playerNameCache = new PlayerNameCache(this, settingsProxy.getUsernameCacheMaxEntries());
+        }
     }
 
     /**
