@@ -79,6 +79,18 @@ public final class LinkCodeManager {
     }
 
     /**
+     * Returns the pending link bound to {@code code} without consuming it, or {@code null} if the code
+     * is unknown or expired. Use this to perform pre-checks (e.g. guild membership) before committing
+     * to a link via {@link #verifyAndConsume}; this avoids burning the code when the caller decides to
+     * reject the request for reasons unrelated to the code itself.
+     */
+    @Nullable
+    public PendingLink lookupCode(final String code) {
+        final PendingLink pending = codes.get(code);
+        return (pending == null || pending.isExpired()) ? null : pending;
+    }
+
+    /**
      * Verifies and consumes a code. Returns the bound player, or null if the code is unknown/expired.
      */
     @Nullable
@@ -130,6 +142,14 @@ public final class LinkCodeManager {
                 return true;
             }
             return false;
+        });
+        // Remove attempt-window entries whose window has fully elapsed so the map cannot
+        // grow without bound. An attacker with many throwaway Discord accounts could
+        // otherwise fill memory indefinitely by sending one wrong code per account.
+        attemptsByUser.entrySet().removeIf(entry -> {
+            synchronized (entry.getValue()) {
+                return now - entry.getValue().windowStart > ATTEMPT_WINDOW_MILLIS;
+            }
         });
     }
 

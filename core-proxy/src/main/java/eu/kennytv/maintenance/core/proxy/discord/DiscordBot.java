@@ -45,8 +45,10 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -335,6 +337,14 @@ public final class DiscordBot extends ListenerAdapter {
                 return;
             }
 
+            // If this Discord user was previously linked to a DIFFERENT Minecraft account, remove that
+            // old account from the whitelist. Without this, a user could link account A (whitelisted),
+            // then re-link to account B (also whitelisted), leaving account A permanently whitelisted.
+            final ProfileLookup previousLink = linkManager.getLink(member.getId());
+            if (previousLink != null && !previousLink.uuid().equals(selected.uuid())) {
+                settings.removeWhitelistedPlayer(previousLink.uuid());
+            }
+
             linkManager.link(member.getId(), selected.uuid(), selected.name());
 
             final StringBuilder reply = new StringBuilder("✅ Linked your Discord account to `").append(selected.name()).append("`.");
@@ -442,19 +452,31 @@ public final class DiscordBot extends ListenerAdapter {
             return;
         }
 
-        final LinkCodeManager.PendingLink pending = linkCodeManager.verifyAndConsume(content);
-        if (pending == null) {
+        // Peek first (without consuming) so that a rejection for reasons unrelated to the code
+        // (e.g. the Minecraft account is already claimed) doesn't burn the code and force the
+        // legitimate player to rejoin just to get a fresh one.
+        final LinkCodeManager.PendingLink peeked = linkCodeManager.lookupCode(content);
+        if (peeked == null) {
             linkCodeManager.recordFailedAttempt(discordId);
             reply(event, "❌ That code is invalid or has expired. Get a new one in-game and try again.");
             return;
         }
-        linkCodeManager.clearAttempts(discordId);
 
-        // One Minecraft account can only be linked to one Discord user.
-        if (linkManager.isLinkedToOther(pending.uuid(), discordId)) {
+        // One Minecraft account can only be linked to one Discord user. Check before consuming.
+        if (linkManager.isLinkedToOther(peeked.uuid(), discordId)) {
             reply(event, "❌ That Minecraft account is already linked to a different Discord account.");
             return;
         }
+
+        // All pre-checks passed — now atomically consume the code.
+        final LinkCodeManager.PendingLink pending = linkCodeManager.verifyAndConsume(content);
+        if (pending == null) {
+            // Code expired or was consumed by a concurrent request in the instant between peek and consume.
+            linkCodeManager.recordFailedAttempt(discordId);
+            reply(event, "❌ That code just expired. Get a new one in-game and try again.");
+            return;
+        }
+        linkCodeManager.clearAttempts(discordId);
 
         linkManager.link(discordId, pending.uuid(), pending.name());
         finishCodeLink(event, discordId, pending);
@@ -462,26 +484,44 @@ public final class DiscordBot extends ListenerAdapter {
 
     private void finishCodeLink(final MessageReceivedEvent event, final String discordId, final LinkCodeManager.PendingLink pending) {
         final String safeName = sanitizeName(pending.name());
+        final Guild guild = resolveGuild();
+
+        // When a guild is configured, always verify the sender is actually a member of it before
+        // granting any access. This closes two gaps:
+        //   1. Non-guild members whitelisted immediately when require-role=false.
+        //   2. UNKNOWN_MEMBER (not in guild) was previously swallowed as "could not verify roles",
+        //      leaving the account linked with no clear rejection for the server owner.
+        if (guild != null) {
+            guild.retrieveMemberById(discordId).queue(member -> {
+                // Member confirmed — whitelist immediately (no role required) or check the role.
+                if (!settings.isLinkingRequireRole() || !roleSyncEnabled() || hasAutoRole(member)) {
+                    settings.addWhitelistedPlayer(pending.uuid(), pending.name());
+                    reply(event, "✅ Linked and whitelisted `" + safeName + "` - you can join now!");
+                } else {
+                    reply(event, "✅ Linked `" + safeName + "`. You'll be whitelisted once you receive the whitelist role.");
+                }
+            }, error -> {
+                if (error instanceof ErrorResponseException err
+                        && err.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER) {
+                    // The sender is not a member of the configured guild: reject the whitelist.
+                    // The link record is intentionally kept so the message "already linked" is shown
+                    // if they try again later; an admin or /unlink can clean it up.
+                    reply(event, "❌ You must join the Discord server before you can be whitelisted. Join first, then rejoin Minecraft to get a fresh code.");
+                } else {
+                    // Transient API error: linked but not whitelisted yet — an admin can /whitelist add manually.
+                    reply(event, "✅ Linked `" + safeName + "`. (Could not verify your server membership right now — contact an admin to be whitelisted.)");
+                }
+            });
+            return;
+        }
+
+        // No guild configured: fall back to role-only check or immediate whitelist.
         if (!settings.isLinkingRequireRole() || !roleSyncEnabled()) {
             settings.addWhitelistedPlayer(pending.uuid(), pending.name());
             reply(event, "✅ Linked and whitelisted `" + safeName + "` - you can join now!");
-            return;
-        }
-
-        final Guild guild = resolveGuild();
-        if (guild == null) {
+        } else {
             reply(event, "✅ Linked `" + safeName + "`. An admin still needs to give you the whitelist role.");
-            return;
         }
-
-        guild.retrieveMemberById(discordId).queue(member -> {
-            if (hasAutoRole(member)) {
-                settings.addWhitelistedPlayer(pending.uuid(), pending.name());
-                reply(event, "✅ Linked and whitelisted `" + safeName + "` - you can join now!");
-            } else {
-                reply(event, "✅ Linked `" + safeName + "`. You'll be whitelisted once you receive the whitelist role.");
-            }
-        }, error -> reply(event, "✅ Linked `" + safeName + "`. (Could not verify your roles right now.)"));
     }
 
     private void reply(final MessageReceivedEvent event, final String message) {
