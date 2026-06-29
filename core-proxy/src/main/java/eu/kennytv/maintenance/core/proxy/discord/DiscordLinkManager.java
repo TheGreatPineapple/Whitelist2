@@ -125,6 +125,17 @@ public final class DiscordLinkManager {
     }
 
     /**
+     * Looks up the Discord user ID linked to a Minecraft UUID.
+     * Used by the {@code /lookup minecraft} admin command.
+     *
+     * @return the Discord user ID, or {@code null} if that UUID is not linked
+     */
+    @Nullable
+    public synchronized String getDiscordId(final UUID uuid) {
+        return discordIdByUuid.get(uuid);
+    }
+
+    /**
      * @return true if the given Minecraft UUID is already linked to any Discord user
      */
     public synchronized boolean isLinked(final UUID uuid) {

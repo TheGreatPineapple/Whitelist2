@@ -40,6 +40,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -180,15 +181,23 @@ public final class DiscordBot extends ListenerAdapter {
                                 .addOption(OptionType.STRING, "player", "Player name or UUID", true),
                         new SubcommandData("list", "List all whitelisted players")
                 );
-        final SlashCommandData linkCommand = Commands.slash("link", "Link your Discord account to a Minecraft account")
-                .addOption(OptionType.STRING, "player", "Your Minecraft name, UUID or .Gamertag for Bedrock", true);
+        // /link (name-based) is intentionally absent. Linking by name allows anyone to claim any account
+        // without proving ownership. The only supported link path is the in-game code flow: join the
+        // server, receive a code, DM it here. /unlink is kept so players can remove their own links.
         final SlashCommandData unlinkCommand = Commands.slash("unlink", "Unlink your Discord account from Minecraft");
+        final SlashCommandData lookupCommand = Commands.slash("lookup", "Admin: look up the account linked to a player or Discord user")
+                .addSubcommands(
+                        new SubcommandData("minecraft", "Find which Discord account is linked to a Minecraft player")
+                                .addOption(OptionType.STRING, "player", "Minecraft name or UUID", true),
+                        new SubcommandData("discord", "Find which Minecraft account is linked to a Discord user")
+                                .addOption(OptionType.USER, "user", "Discord user to look up", true)
+                );
 
         final String guildId = settings.getDiscordGuildId();
         if (guildId != null && !guildId.isEmpty()) {
             final Guild guild = jda.getGuildById(guildId);
             if (guild != null) {
-                guild.updateCommands().addCommands(whitelistCommand, linkCommand, unlinkCommand).queue();
+                guild.updateCommands().addCommands(whitelistCommand, unlinkCommand, lookupCommand).queue();
                 plugin.getLogger().info("Registered Discord slash commands for guild " + guild.getName() + ".");
                 reconcileRoleMembers(guild);
                 return;
@@ -196,7 +205,7 @@ public final class DiscordBot extends ListenerAdapter {
             plugin.getLogger().warning("Configured Discord guild-id '" + guildId + "' could not be found; registering commands globally instead.");
         }
 
-        jda.updateCommands().addCommands(whitelistCommand, linkCommand, unlinkCommand).queue();
+        jda.updateCommands().addCommands(whitelistCommand, unlinkCommand, lookupCommand).queue();
         plugin.getLogger().info("Registered global Discord slash commands (may take up to an hour to appear).");
 
         if (roleSyncEnabled()) {
