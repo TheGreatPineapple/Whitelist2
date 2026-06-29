@@ -27,3 +27,4 @@ jobs:
         with:
           name: ProxyWhitelist
           path: build/libs/ProxyWhitelist-*.jar
+          if-no-files-found: error

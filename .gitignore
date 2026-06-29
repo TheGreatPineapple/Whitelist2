@@ -1,3 +1,12 @@
+# Replit-specific files
+.replit
+replit.nix
+replit.md
+attached_assets/
+.agents/
+.local/
+.cache/
+
 .metadata
 build/
 .gradle

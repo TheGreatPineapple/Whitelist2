@@ -35,8 +35,12 @@ java {
 }
 
 signing {
-    useGpgCmd()
-    sign(publishing.publications)
+    val signingKey = providers.environmentVariable("SIGNING_KEY").orNull
+    val signingPassword = providers.environmentVariable("SIGNING_PASSWORD").orNull
+    if (signingKey != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications)
+    }
 }
 
 publishing {
