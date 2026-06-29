@@ -5,7 +5,7 @@ whitelist is enabled, only whitelisted players may join the network (or specific
 else is shown a configurable kick message / MOTD.
 
 It is a proxy-only fork of [kennytv's Maintenance plugin](https://github.com/kennytv/Maintenance), refocused
-around whitelisting and extended with first-class Bedrock support and a built-in Discord bot.
+around whitelisting and extended with Bedrock support and a built-in Discord bot.
 
 ## Features
 * Toggle the whitelist globally or per backend server (`/whitelist <on/off> [server]`)
@@ -62,7 +62,7 @@ normal way — and auth plugins like **LimboAuth** prefix cracked names with a `
 keeps a **username cache** (`usernamecache.yml`): every player that connects is recorded `name → uuid`, and
 `/whitelist add` checks the cache first. So a cracked player just needs to **attempt to join once** (they'll be
 cached even though they're kicked), then staff can add them by the exact name shown in the kick log, e.g.
-`/whitelist add .ibuyKhushi340`. This also covers Bedrock/Floodgate players. (Note: if your Bedrock `prefix`
+`/whitelist add .randomnoob`. This also covers Bedrock/Floodgate players. (Note: if your Bedrock `prefix`
 and your auth plugin's cracked prefix are both `.`, the cache is what disambiguates them.)
 
 The cache is hardened against join floods / bot attacks: it's **bounded** (`username-cache.max-entries`, default
@@ -97,10 +97,10 @@ Flow: a non-whitelisted player joins → they get a one-time code → they DM th
 linked and (if `require-role`) checked for the role → added to the whitelist → they can play. For `limbo` mode,
 point `waiting-server` at a lightweight Limbo (e.g. NanoLimbo/LimboAPI) so they can read their code there.
 
-**Security:** codes are `SecureRandom`-generated, single-use, expire, and are **bound to the connecting
+**Security:** codes are generated, single-use, expire, and are **bound to the connecting
 player's UUID** — so a cracked/offline player can never use a code to claim someone else's account. DM input is
-strictly validated (exactly N digits), verification attempts are rate-limited per Discord user, one Minecraft
-account maps to one Discord user, and bot replies never ping anyone. (Real impersonation protection for the
+strictly validated verification attempts are rate-limited per Discord user, one Minecraft
+account maps to one Discord user,  the
 underlying account still requires online-mode auth / Floodgate for Bedrock.)
 
 ### Working with DiscordSRV or other linkers (the permission bridge)
